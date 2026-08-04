@@ -1,0 +1,45 @@
+name: Build and deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # There is no working `pip install arklight` -- no such package
+      # is published on PyPI (verified directly; see README.md). The
+      # only real install path is cloning ARKlight's own repo and
+      # `pip install -e .`. This site specifically needs the `alpha`
+      # branch (Site.style(), Page(...) head-metadata props) -- see
+      # README.md's compatibility table for exactly what `main` lacks.
+      - name: Install ARKlight (alpha branch)
+        run: |
+          git clone --branch alpha https://github.com/Rae-ARK/ARKlight.git /tmp/ARKlight
+          pip install -e /tmp/ARKlight
+          pip install matplotlib
+          python -c "import arklight; print('ARKlight', arklight.__version__)"
+
+      # build.sh already does the right thing end to end: generates
+      # chart assets, builds site.py -> ARK/, attempts arklight pack,
+      # and degrades gracefully (see README.md, "the mobile 'no app to
+      # open this' problem") if packing fails for any reason -- it
+      # still exits 0 with a deployable ARK/ either way.
+      - name: Build the site
+        run: bash build.sh
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

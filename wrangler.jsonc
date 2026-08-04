@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "arklight-vs-frontend",
+  // Bump this to today's date when you deploy.
+  "compatibility_date": "2026-08-04",
+  "assets": {
+    // ARKlight's own build output -- always the fallback, and the
+    // only thing this config actually serves. The sealed
+    // arklight-vs-frontend.ark bundle is not deployed here; Cloudflare
+    // Workers static assets needs real, separate files (index.html,
+    // styles.css, arklight.js, assets/*.png) to route between pages,
+    // which is exactly what ARK/ is and what an .ark bundle isn't.
+    "directory": "./ARK",
+    // ARKlight's Link() already resolves internal links to real,
+    // relative "page.html" hrefs at build time (see the ARKlight
+    // README, "Internal links are relative, not root-absolute") --
+    // there's no clean-URL router to match. "none" serves each file
+    // at its literal path with zero rewrite/redirect layer, so a nav
+    // click goes straight to /bundle-size.html instead of bouncing
+    // through a 307 first (which "auto-trailing-slash", Cloudflare's
+    // default, would add).
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+  // No "main" entry -- this is pure static hosting, no Worker script.
+  // Add one later only if you need dynamic routes (a contact form
+  // endpoint, redirects, etc.) beyond what static assets can do.
+}
