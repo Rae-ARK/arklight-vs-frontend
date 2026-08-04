@@ -38,7 +38,7 @@ from services.styles import register_site_styles
 
 check_arklight_compatibility()
 
-site = Site()
+site = Site(bg=THEME["bg"])
 register_site_styles(site, THEME)
 
 

@@ -1,10 +1,9 @@
 # The desktop container-width bug: why it happened, and how to prevent it recurring
 
-Status: **Investigation complete. Fix not yet applied** -- this document
-is being committed *before* any CSS change, on purpose, so the root
-cause is on record independent of whatever patch follows it. This file
-will be updated in place (not superseded by a new file) as the actual
-fix lands -- see "Status" at the bottom.
+Status: **Fixed upstream, in ARKlight itself -- this site's deployed
+build was just stale.** See "Status" at the bottom for what changed and
+what that does/doesn't mean for this repo's own `postprocess` plan
+below.
 
 ## The symptom
 
@@ -165,13 +164,46 @@ pattern can't reach.**
       `arklight/backend/html/render.py::_render_page`,
       `arklight/backend/base.py`, `arklight/compiler/pipeline.py`),
       not assumed from the symptom alone.
-- [ ] Fix implemented (`Backend.postprocess`-based `styles.css`
-      rewrite, using `clamp()`/intrinsic sizing per Intrinsic Web
-      Design conventions, no `@media` involved) -- **not in this
-      patch**.
-- [ ] `content/faq.py` entry added, pointing back to this file.
-- [ ] Verified against a real wide-viewport render, not just a clean
-      `arklight build`.
+- [x] **Fixed upstream in ARKlight itself, not via this repo's
+      `postprocess` workaround.** As of the current `alpha` branch,
+      `arklight/backend/css/design_tokens.py` no longer hardcodes
+      `--ark-max-width: 720px` with no override path. It now (a)
+      defaults to a fluid `min(100% - 3rem, 75rem)` -- a real
+      intrinsic-sizing value, not a fixed column, so `body` itself
+      already reflows with viewport width instead of capping at 720px
+      -- and (b) is reachable directly via `Site(max_width=...)`
+      (alongside the pre-existing `Site(bg=...)`), which reaches
+      `body`'s own rule the way point 1 below says a fix would have
+      to. Confirmed by rebuilding this exact `site.py` against the
+      current ARKlight install: the regenerated `styles.css` reads
+      `--ark-max-width: min(100% - 3rem, 75rem)`, not `720px`.
+      **This means the `Backend.postprocess`-based `styles.css`
+      string-rewrite planned in point 3 above is no longer necessary**
+      -- it was the right workaround for the ARKlight version this
+      site was built against, but a rebuild against current `alpha`
+      gets the fix for free, with no site-side code change.
+- [x] `--ark-bg`'s full-window coverage (the sibling issue this
+      document's point 1 cross-references) is also fixed upstream in
+      the same ARKlight branch: `html {}` now carries `min-height:
+      100%` and paints `--ark-bg` directly, and `body` carries
+      `min-height: 100vh`, so this repo's `page_shell()` background
+      workaround is likewise no longer the only way to get full-window
+      background coverage -- though it remains harmless to keep, since
+      it paints the same color a level deeper.
+- [ ] `content/faq.py` entry added, pointing back to this file (still
+      worth doing -- explains *why* an old build looked capped at
+      720px even though nothing in this site's own code set that,
+      which a future contributor rebuilding from a stale ARKlight
+      checkout could hit again).
+- [ ] **This repo's own deployed `ARK/` folder and `arklight-vs-
+      frontend.ark` bundle are still stale** -- both were built against
+      the pre-fix ARKlight and still contain `--ark-max-width: 720px`
+      today. The source-level bug is fixed; the *deployed* site isn't,
+      until `./build.sh` is re-run against a current `alpha` checkout
+      and redeployed.
 
-This file will be updated in place as each remaining item is checked
-off, rather than replaced by a new document.
+This file is being kept, in place, as the historical record of the
+bug and its root cause -- not deleted now that the fix landed
+upstream -- since the "why nobody caught this" and "how to prevent it
+recurring" sections above are still accurate and still worth reading
+before trusting a `--ark-*` re-theme.
