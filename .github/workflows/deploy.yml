@@ -49,9 +49,16 @@ jobs:
           ARKLIGHT_ACCEPT_LICENSE: "1"
         run: bash build.sh
 
+      # wrangler-action has no package.json/lockfile to detect a wrangler
+      # version from in this repo, so it falls back to installing its own
+      # baked-in default (3.90.0 at time of writing) -- which predates
+      # Wrangler's support for assets-only deploys (no `main` entry-point,
+      # see wrangler.jsonc) and fails with "Missing entry-point". Pin a
+      # current major explicitly so this doesn't silently regress again.
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+          wranglerVersion: "4"
