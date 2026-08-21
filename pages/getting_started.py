@@ -3,7 +3,7 @@ from __future__ import annotations
 from arklight import Code, Container, Heading, Pre, Text
 
 from components.layout import page_shell
-from content.getting_started import GETTING_STARTED_STEPS
+from content.getting_started import CLI_REFERENCE, GETTING_STARTED_STEPS
 
 
 def getting_started(theme: dict[str, str]):
@@ -16,6 +16,15 @@ def getting_started(theme: dict[str, str]):
         )
         for step_title, command, note in GETTING_STARTED_STEPS
     ]
+    cli_reference = [
+        Container(
+            Heading(title, level=3),
+            Pre(Code(command)),
+            Text(note, class_name="muted"),
+            class_name="card",
+        )
+        for title, command, note in CLI_REFERENCE
+    ]
     return page_shell(
         Heading("Getting Started"),
         Text(
@@ -24,6 +33,16 @@ def getting_started(theme: dict[str, str]):
             "same five steps against the alpha branch.",
         ),
         Container(*steps, class_name="stack"),
+        Heading("CLI reference -- beyond the five steps above", level=2),
+        Text(
+            "Independent commands a project reaches for as needed, "
+            "not a linear sequence -- pulled directly from "
+            "`arklight/cli/main.py`'s own --help text. One of these "
+            "(the PWA install button) is flagged EXPERIMENTAL; see "
+            "the FAQ for what that means and why.",
+            class_name="muted",
+        ),
+        Container(*cli_reference, class_name="stack"),
         Heading("A minimal site.py", level=2),
         Pre(Code(
             "from arklight import *\n\n"

@@ -7,7 +7,10 @@ from content.faq import FAQ
 
 
 def faq(theme: dict[str, str]):
-    entries = [Details(Summary(question), Text(answer)) for question, answer in FAQ]
+    entries = [
+        Details(Summary(question), Text(answer), class_name="glass")
+        for question, answer in FAQ
+    ]
     return page_shell(
         Heading("FAQ"),
         Text(
@@ -18,6 +21,6 @@ def faq(theme: dict[str, str]):
         ),
         Container(*entries, class_name="stack"),
         title="FAQ",
-        description="Answers to the honest edge cases found while building this site -- no live charts, no @media yet, no PyPI package.",
+        description="Answers to the honest edge cases found while building this site -- no live charts, @media gated as experimental, no PyPI package.",
         theme=theme,
     )

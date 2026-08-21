@@ -21,6 +21,7 @@ def verdict(theme: dict[str, str]):
                 "right tool. ARKlight's JS is a closed, named vocabulary "
                 "by design, not a smaller version of a full runtime.",
             ),
+            class_name="glass",
         ),
         Details(
             Summary("Is your team already fluent in JS/TS and an existing framework?"),
@@ -29,6 +30,7 @@ def verdict(theme: dict[str, str]):
                 "benefits today -- it's a young, single-maintainer "
                 "project without React/Vue/Svelte's ecosystem.",
             ),
+            class_name="glass",
         ),
         Details(
             Summary("Do you write Python, need a handful of static pages, and want zero npm toolchain?"),
@@ -37,6 +39,7 @@ def verdict(theme: dict[str, str]):
                 "internal tools, a landing page templated out of a "
                 "script, teaching contexts. Genuinely pleasant there.",
             ),
+            class_name="glass",
         ),
         title="The Honest Verdict",
         description="Who should actually use ARKlight, and who shouldn't -- a direct recommendation.",

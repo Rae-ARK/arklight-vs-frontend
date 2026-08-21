@@ -14,20 +14,70 @@ FAQ = [
     ),
     (
         "Can Site.style() define hover or focus states?",
-        "No. Custom class names are validated against "
-        "^[a-zA-Z_]\\w*$ (letters, digits, underscore, hyphen only) -- "
-        "a name like cta:hover is rejected before it reaches the "
-        "generated stylesheet. Per-node style={...} has no such "
-        "limit, but inline styles can't express pseudo-classes either; "
-        "there's currently no ARKlight-native way to style :hover.",
+        "Yes, as of the current alpha -- a rules key can be "
+        "\":<pseudo>:<property>\" (e.g. site.style(\"card\", "
+        "{\":hover:transform\": \"translateY(-2px)\"})), which renders "
+        "a real .card:hover { transform: ...; } block. It's a curated "
+        "set, not open-ended CSS: only hover, focus, focus-visible, "
+        "active, visited, disabled, checked, and first-child/"
+        "last-child are accepted (arklight.api.ALLOWED_PSEUDO_CLASSES) "
+        "-- an unlisted pseudo-class, or a raw selector string, still "
+        "raises CSSSyntaxError rather than reaching the stylesheet. "
+        "This site's own card hover-lift (see /playground and every "
+        "card grid) is a real example, not a mockup.",
     ),
     (
         "Does ARKlight support @media queries yet?",
-        "Not yet -- v0.048 is designed but not implemented. Today's "
-        "responsive layout is intrinsic-only: .stack/.switcher/.grid "
-        "adapt from a container's own available width via flexbox/grid "
-        "sizing keywords, with no breakpoint tied to a device or "
-        "screen size at all.",
+        "Yes, but deliberately gated as EXPERIMENTAL rather than a "
+        "first-class primitive -- site.media_query(condition, "
+        "class_name, rules) renders a real @media (condition) { "
+        ".class_name { ... } } block, and every call prints an "
+        "[EXPERIMENTAL FEATURE ACTIVE] warning at build time plus a "
+        "summary at the end of the run (see docs/EXPERIMENTAL-APIS.md "
+        "-- and the FAQ entry below on why it's gated at all). Today's "
+        "*default* responsive layout is still intrinsic-only: "
+        ".stack/.switcher/.grid adapt from a container's own available "
+        "width via flexbox/grid sizing keywords, with no breakpoint "
+        "tied to a device or screen size -- @media is the opt-in exit "
+        "from that model, not a replacement for it.",
+    ),
+    (
+        "What counts as an 'experimental' ARKlight API, and why gate it instead of just shipping it?",
+        "Anything that steps outside ARKlight's intrinsic-layout "
+        "model -- currently that's exactly two features, both "
+        "registered in arklight/experimental.py: css-media-queries "
+        "(site.media_query(...), above) and "
+        "experimental-install-pwa (arklight pwa --install-button, a "
+        "native browser install prompt that depends entirely on the "
+        "non-standardized beforeinstallprompt event). Neither is "
+        "blocked outright -- both answer a real constraint a design "
+        "can genuinely have -- but gating means the tradeoff surfaces "
+        "at build time, every time, instead of shipping silently and "
+        "being discovered later on a device nobody tested on. Per "
+        "docs/EXPERIMENTAL-APIS.md, this matters more on Android "
+        "specifically than 'phone vs. desktop' framing usually implies "
+        "-- no single reference viewport, foldables crossing a "
+        "breakpoint mid-session, and inconsistent WebView support for "
+        "newer viewport units are all reasons a static breakpoint can "
+        "silently mis-lay-out on a real device even after testing on "
+        "one Android phone.",
+    ),
+    (
+        "Is there more to `arklight search` than a one-shot lookup?",
+        "Yes -- arklight search Name is the base case (prints a "
+        "component's required props, whether it takes children, and "
+        "typo-tolerant 'did you mean' suggestions), but the current "
+        "alpha CLI adds two more layers on top: --near NAME biases "
+        "suggestion ranking toward components structurally close to "
+        "one this project has actually used (a personalized-PageRank "
+        "seed over a real usage graph, not just string distance), and "
+        "--accept records an exact match so future searches in this "
+        "project rank it higher -- a small learning loop, not a static "
+        "lookup table. --serve starts a long-lived line-delimited-JSON "
+        "stdio server instead (arklight.search.endpoint), meant to be "
+        "launched as a subprocess by an editor/IDE extension the same "
+        "way an LSP client launches a language server, not run "
+        "interactively by hand.",
     ),
     (
         "Can one on_click fire more than one Action?",

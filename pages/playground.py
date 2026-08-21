@@ -26,7 +26,7 @@ def _framework_card(key: str, name: str, summary: str, detail: str, is_hero: boo
     return Container(
         Heading(name, level=3),
         Text(summary, class_name="muted"),
-        Button("Toggle details", on_click=Action.toggle_bool(state_key)),
+        Button("Toggle details", on_click=Action.toggle_bool(state_key), class_name="pill"),
         Container(
             Text(detail),
             class_name="playground-panel",
@@ -48,9 +48,9 @@ def _counter_demo():
         ),
         Heading(Bind("count"), level=3, class_name="kpi-value"),
         Container(
-            Button("-1", on_click=Action.decrement("count")),
-            Button("Reset", on_click=Action.reset("count")),
-            Button("+1", on_click=Action.increment("count")),
+            Button("-1", on_click=Action.decrement("count"), class_name="pill"),
+            Button("Reset", on_click=Action.reset("count"), class_name="pill"),
+            Button("+1", on_click=Action.increment("count"), class_name="pill"),
             class_name="cluster",
         ),
         class_name="card",
