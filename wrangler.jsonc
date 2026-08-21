@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "arklight-vs-frontend",
+  "name": "arklight",
   // Bump this to today's date when you deploy.
   "compatibility_date": "2026-08-04",
   "assets": {
