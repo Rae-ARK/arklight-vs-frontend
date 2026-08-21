@@ -44,6 +44,15 @@ since merged `alpha` into `main`, or moved further ahead, treat the
 table above as a snapshot of what was true when this project was
 built, not a live diff.
 
+**Re-verified against ARKlight's `alpha`/`main` HEAD some time later:**
+`alpha` had moved to `v0.436` and `main` to `v0.42.3` -- both far past
+the versions in the table above, and every `alpha`-only feature this
+site depends on (`Site.style`, `Page(...)` head metadata,
+`Backend.postprocess`) was still present and still absent from `main`
+respectively, so the compatibility guard below still does its job
+unmodified. The one thing that *did* change in the interim is the
+license-acceptance gate, covered in its own section below.
+
 ## What's in this repo
 
 ```
@@ -116,12 +125,23 @@ either `pip install -e . --config-settings=yes-i-agree-to-arklight-license=1`
 or `ARKLIGHT_ACCEPT_LICENSE=1 pip install -e .` (read `LICENSE` in the
 ARKlight repo first). This is a real, reproducible gate in `main`'s
 build backend, not something inferred -- confirmed by actually running
-the install and reading the message it prints. The `alpha` branch used
-here has no such gate. `data.py`'s `PYPI_FINDING` entry records a
-related, *unverified* claim (a license-acceptance gate specifically in
-a PyPI-distributed wheel) that this session could not confirm one way
-or the other, since no such wheel exists to test -- noted here so the
-two don't get conflated.
+the install and reading the message it prints. `data.py`'s
+`PYPI_FINDING` entry records a related, *unverified* claim (a
+license-acceptance gate specifically in a PyPI-distributed wheel) that
+this session could not confirm one way or the other, since no such
+wheel exists to test -- noted here so the two don't get conflated.
+
+**Update, re-verified against a later ARKlight `alpha` checkout: this
+is no longer `main`-only.** `alpha`'s `pip install -e .` now gates on
+the same `--config-settings=yes-i-agree-to-arklight-license=1` /
+`ARKLIGHT_ACCEPT_LICENSE=1` terms, *and* the `arklight` CLI itself
+additionally refuses to run non-interactively (e.g. inside `build.sh`
+or CI) without `ARKLIGHT_ACCEPT_LICENSE=1` set in the environment --
+two separate checks, not one. `build.sh` and
+`.github/workflows/deploy.yml` in this repo both set/require it now.
+If you're on an `alpha` checkout old enough to predate this gate, you
+won't hit either check -- treat this note the same way as the version
+table above, a snapshot rather than a live diff.
 
 ### `.ark` bundle failures -- ARK/ is always the fallback
 

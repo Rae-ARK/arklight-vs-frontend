@@ -22,7 +22,15 @@ jobs:
       # `pip install -e .`. This site specifically needs the `alpha`
       # branch (Site.style(), Page(...) head-metadata props) -- see
       # README.md's compatibility table for exactly what `main` lacks.
+      # ARKlight's alpha branch now gates both `pip install -e .` and
+      # the `arklight` CLI itself on license acceptance (previously
+      # only `main`'s build backend did this -- see README.md's
+      # compatibility table). ARKLIGHT_ACCEPT_LICENSE covers both
+      # gates; read the ARKlight repo's LICENSE before setting this in
+      # your own fork.
       - name: Install ARKlight (alpha branch)
+        env:
+          ARKLIGHT_ACCEPT_LICENSE: "1"
         run: |
           git clone --branch alpha https://github.com/Rae-ARK/ARKlight.git /tmp/ARKlight
           pip install -e /tmp/ARKlight
@@ -33,8 +41,12 @@ jobs:
       # chart assets, builds site.py -> ARK/, attempts arklight pack,
       # and degrades gracefully (see README.md, "the mobile 'no app to
       # open this' problem") if packing fails for any reason -- it
-      # still exits 0 with a deployable ARK/ either way.
+      # still exits 0 with a deployable ARK/ either way. It also now
+      # pre-flights ARKLIGHT_ACCEPT_LICENSE itself (see build.sh) with
+      # a clearer message than the CLI's own if this env var is missing.
       - name: Build the site
+        env:
+          ARKLIGHT_ACCEPT_LICENSE: "1"
         run: bash build.sh
 
       - name: Deploy to Cloudflare Workers

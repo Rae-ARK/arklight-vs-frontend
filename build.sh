@@ -28,6 +28,22 @@ if ! python3 -c "import arklight" 2>/dev/null; then
     exit 1
 fi
 
+# As of ARKlight alpha v0.0432-ish (exact version untracked upstream --
+# see README.md's compatibility table), the `arklight` CLI itself gates
+# non-interactive use on ARKLIGHT_ACCEPT_LICENSE, separately from the
+# pip-install-time gate `pip install -e .` already requires. Failing
+# here with our own message keeps this script's error style consistent
+# with the ARKlight-not-installed check above, instead of surfacing
+# `arklight build`'s own generic license-gate text three steps later.
+if [ -z "${ARKLIGHT_ACCEPT_LICENSE:-}" ]; then
+    echo "ERROR: ARKLIGHT_ACCEPT_LICENSE is not set."
+    echo "ARKlight's CLI now refuses to run non-interactively until its"
+    echo "GPLv3 + additional-terms license is accepted (read LICENSE in"
+    echo "the ARKlight repo first, then):"
+    echo "    export ARKLIGHT_ACCEPT_LICENSE=1"
+    exit 1
+fi
+
 echo "==> Generating chart assets (matplotlib)"
 mkdir -p assets
 if ! python3 generate_assets.py; then

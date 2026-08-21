@@ -1,112 +1,111 @@
-diff --git a/site.py b/site.py
-new file mode 100644
-index 0000000..e9e9720
---- /dev/null
-+++ b/site.py
-@@ -0,0 +1,106 @@
-+"""
-+Composition root.
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 439f4de..d5bc7d5 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -22,7 +22,15 @@ jobs:
+       # `pip install -e .`. This site specifically needs the `alpha`
+       # branch (Site.style(), Page(...) head-metadata props) -- see
+       # README.md's compatibility table for exactly what `main` lacks.
++      # ARKlight's alpha branch now gates both `pip install -e .` and
++      # the `arklight` CLI itself on license acceptance (previously
++      # only `main`'s build backend did this -- see README.md's
++      # compatibility table). ARKLIGHT_ACCEPT_LICENSE covers both
++      # gates; read the ARKlight repo's LICENSE before setting this in
++      # your own fork.
+       - name: Install ARKlight (alpha branch)
++        env:
++          ARKLIGHT_ACCEPT_LICENSE: "1"
+         run: |
+           git clone --branch alpha https://github.com/Rae-ARK/ARKlight.git /tmp/ARKlight
+           pip install -e /tmp/ARKlight
+@@ -33,8 +41,12 @@ jobs:
+       # chart assets, builds site.py -> ARK/, attempts arklight pack,
+       # and degrades gracefully (see README.md, "the mobile 'no app to
+       # open this' problem") if packing fails for any reason -- it
+-      # still exits 0 with a deployable ARK/ either way.
++      # still exits 0 with a deployable ARK/ either way. It also now
++      # pre-flights ARKLIGHT_ACCEPT_LICENSE itself (see build.sh) with
++      # a clearer message than the CLI's own if this env var is missing.
+       - name: Build the site
++        env:
++          ARKLIGHT_ACCEPT_LICENSE: "1"
+         run: bash build.sh
+ 
+       - name: Deploy to Cloudflare Workers
+diff --git a/README.md b/README.md
+index dd5c612..4e64b18 100644
+--- a/README.md
++++ b/README.md
+@@ -44,6 +44,15 @@ since merged `alpha` into `main`, or moved further ahead, treat the
+ table above as a snapshot of what was true when this project was
+ built, not a live diff.
+ 
++**Re-verified against ARKlight's `alpha`/`main` HEAD some time later:**
++`alpha` had moved to `v0.436` and `main` to `v0.42.3` -- both far past
++the versions in the table above, and every `alpha`-only feature this
++site depends on (`Site.style`, `Page(...)` head metadata,
++`Backend.postprocess`) was still present and still absent from `main`
++respectively, so the compatibility guard below still does its job
++unmodified. The one thing that *did* change in the interim is the
++license-acceptance gate, covered in its own section below.
 +
-+This is the only file ARKlight's static discovery
-+(arklight.parser.discover) actually reads to find `Site()` and
-+`@<site_var>.page("/route")` decorators -- see pages/__init__.py and
-+content/routes.py for why that means route registration can't live
-+inside pages/ itself, no matter how tempting it is to put
-+`@site.page(...)` next to each page function. Every decorated function
-+below is a thin, zero-argument shim: discovery only needs to *see* the
-+decorator here, the real page logic still lives in pages/, built from
-+content/ + components/ + services/ exactly as the rest of this split
-+already does.
+ ## What's in this repo
+ 
+ ```
+@@ -116,12 +125,23 @@ either `pip install -e . --config-settings=yes-i-agree-to-arklight-license=1`
+ or `ARKLIGHT_ACCEPT_LICENSE=1 pip install -e .` (read `LICENSE` in the
+ ARKlight repo first). This is a real, reproducible gate in `main`'s
+ build backend, not something inferred -- confirmed by actually running
+-the install and reading the message it prints. The `alpha` branch used
+-here has no such gate. `data.py`'s `PYPI_FINDING` entry records a
+-related, *unverified* claim (a license-acceptance gate specifically in
+-a PyPI-distributed wheel) that this session could not confirm one way
+-or the other, since no such wheel exists to test -- noted here so the
+-two don't get conflated.
++the install and reading the message it prints. `data.py`'s
++`PYPI_FINDING` entry records a related, *unverified* claim (a
++license-acceptance gate specifically in a PyPI-distributed wheel) that
++this session could not confirm one way or the other, since no such
++wheel exists to test -- noted here so the two don't get conflated.
 +
-+Kept in the order content.routes.ROUTES lists them, and checked against
-+that list at import time (see the bottom of this file) -- ROUTES drives
-+components.layout.nav() independently of the decorators here, and
-+nothing in ARKlight itself keeps the two in sync automatically (see
-+content/routes.py's own docstring).
-+"""
++**Update, re-verified against a later ARKlight `alpha` checkout: this
++is no longer `main`-only.** `alpha`'s `pip install -e .` now gates on
++the same `--config-settings=yes-i-agree-to-arklight-license=1` /
++`ARKLIGHT_ACCEPT_LICENSE=1` terms, *and* the `arklight` CLI itself
++additionally refuses to run non-interactively (e.g. inside `build.sh`
++or CI) without `ARKLIGHT_ACCEPT_LICENSE=1` set in the environment --
++two separate checks, not one. `build.sh` and
++`.github/workflows/deploy.yml` in this repo both set/require it now.
++If you're on an `alpha` checkout old enough to predate this gate, you
++won't hit either check -- treat this note the same way as the version
++table above, a snapshot rather than a live diff.
+ 
+ ### `.ark` bundle failures -- ARK/ is always the fallback
+ 
+diff --git a/build.sh b/build.sh
+index 0759059..d4e14e3 100755
+--- a/build.sh
++++ b/build.sh
+@@ -28,6 +28,22 @@ if ! python3 -c "import arklight" 2>/dev/null; then
+     exit 1
+ fi
+ 
++# As of ARKlight alpha v0.0432-ish (exact version untracked upstream --
++# see README.md's compatibility table), the `arklight` CLI itself gates
++# non-interactive use on ARKLIGHT_ACCEPT_LICENSE, separately from the
++# pip-install-time gate `pip install -e .` already requires. Failing
++# here with our own message keeps this script's error style consistent
++# with the ARKlight-not-installed check above, instead of surfacing
++# `arklight build`'s own generic license-gate text three steps later.
++if [ -z "${ARKLIGHT_ACCEPT_LICENSE:-}" ]; then
++    echo "ERROR: ARKLIGHT_ACCEPT_LICENSE is not set."
++    echo "ARKlight's CLI now refuses to run non-interactively until its"
++    echo "GPLv3 + additional-terms license is accepted (read LICENSE in"
++    echo "the ARKlight repo first, then):"
++    echo "    export ARKLIGHT_ACCEPT_LICENSE=1"
++    exit 1
++fi
 +
-+from arklight import Site
-+
-+import pages.adoption
-+import pages.architecture
-+import pages.bundle_size
-+import pages.changelog
-+import pages.faq
-+import pages.getting_started
-+import pages.home
-+import pages.methodology
-+import pages.playground
-+import pages.verdict
-+from content.routes import ROUTES
-+from content.theme import THEME
-+from services.compatibility import check_arklight_compatibility
-+from services.styles import register_site_styles
-+
-+check_arklight_compatibility()
-+
-+site = Site()
-+register_site_styles(site, THEME)
-+
-+
-+@site.page("/")
-+def home():
-+    return pages.home.home(THEME)
-+
-+
-+@site.page("/bundle-size")
-+def bundle_size():
-+    return pages.bundle_size.bundle_size(THEME)
-+
-+
-+@site.page("/adoption")
-+def adoption():
-+    return pages.adoption.adoption(THEME)
-+
-+
-+@site.page("/architecture")
-+def architecture():
-+    return pages.architecture.architecture(THEME)
-+
-+
-+@site.page("/methodology")
-+def methodology():
-+    return pages.methodology.methodology(THEME)
-+
-+
-+@site.page("/verdict")
-+def verdict():
-+    return pages.verdict.verdict(THEME)
-+
-+
-+@site.page("/getting-started")
-+def getting_started():
-+    return pages.getting_started.getting_started(THEME)
-+
-+
-+@site.page("/changelog")
-+def changelog():
-+    return pages.changelog.changelog(THEME)
-+
-+
-+@site.page("/faq")
-+def faq():
-+    return pages.faq.faq(THEME)
-+
-+
-+@site.page("/playground")
-+def playground():
-+    return pages.playground.playground(THEME)
-+
-+
-+# --------------------------------------------------------------------
-+# content/routes.py warns that ROUTES (nav()'s source of truth) and the
-+# @site.page(...) decorators above (ARKlight's source of truth) have to
-+# be kept consistent by hand -- nothing here enforces it for you. Catch
-+# a drift between the two at import time, before a stale nav link or an
-+# orphaned route ships silently.
-+_registered_routes = set(site.routes.keys())
-+_nav_routes = {route for route, _label in ROUTES}
-+assert _registered_routes == _nav_routes, (
-+    "content.routes.ROUTES and site.py's @site.page(...) decorators "
-+    f"disagree: {_registered_routes.symmetric_difference(_nav_routes)}"
-+)
+ echo "==> Generating chart assets (matplotlib)"
+ mkdir -p assets
+ if ! python3 generate_assets.py; then
